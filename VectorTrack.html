@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>VectorTrack — Acesso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B0F12; --panel:#121820; --panel-2:#17202A; --line:#243040;
+  --ink:#E7EEF2; --ink-dim:#8CA0AE; --accent:#4FD6B0; --accent-2:#F2A541;
+  --danger:#E8604C; --radius:10px; color-scheme: dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#EEF2F1; --panel:#FFFFFF; --panel-2:#F4F7F6; --line:#D6DEDC;
+    --ink:#101A1D; --ink-dim:#5A6B70; --accent:#1C9E80; --accent-2:#B5760E; --danger:#C4432F;
+  }
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg);}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Mono',monospace;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);min-height:100%;
+  display:flex;align-items:flex-start;justify-content:center;}
+h1,h2,.disp{font-family:'Space Grotesk',sans-serif;}
+.wrap{width:100%;max-width:420px;padding:40px 18px 60px;}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:26px;justify-content:center;}
+.brand .mark{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#2A8E74);display:flex;align-items:center;justify-content:center;font-weight:700;color:#06211A;font-family:'Space Grotesk',sans-serif;}
+.brand h1{font-size:1.05rem;margin:0;}
+.notice{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent-2);border-radius:var(--radius);padding:11px 13px;font-size:.72rem;color:var(--ink-dim);line-height:1.5;margin-bottom:20px;}
+.notice b{color:var(--ink);}
+
+.tabs{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:4px;margin-bottom:18px;}
+.tab{flex:1;text-align:center;padding:9px 0;border-radius:999px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.82rem;cursor:pointer;color:var(--ink-dim);}
+.tab.active{background:var(--accent);color:#06211A;}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:22px;}
+.card h2{font-size:1.05rem;margin:0 0 4px;}
+.card p.sub{color:var(--ink-dim);font-size:.76rem;margin:0 0 18px;}
+label{display:block;font-size:.72rem;color:var(--ink-dim);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em;}
+input{width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);padding:11px 12px;border-radius:8px;font-family:inherit;font-size:.88rem;margin-bottom:14px;}
+input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.row{display:flex;justify-content:space-between;align-items:center;margin:-6px 0 14px;}
+.link{color:var(--accent);font-size:.76rem;cursor:pointer;background:none;border:none;padding:0;font-family:inherit;}
+.link.subtle{color:var(--ink-dim);}
+button.primary{width:100%;background:var(--accent);color:#06211A;border:none;padding:12px;border-radius:8px;font-weight:600;font-family:'Space Grotesk',sans-serif;cursor:pointer;font-size:.9rem;}
+button.primary:active{transform:translateY(1px);}
+button.ghost{width:100%;background:transparent;color:var(--ink-dim);border:1px solid var(--line);padding:11px;border-radius:8px;font-family:'Space Grotesk',sans-serif;cursor:pointer;font-size:.85rem;margin-top:8px;}
+.msg{font-size:.78rem;border-radius:8px;padding:9px 11px;margin-bottom:14px;display:none;}
+.msg.err{background:rgba(232,96,76,.12);color:var(--danger);display:block;}
+.msg.ok{background:rgba(79,214,176,.12);color:var(--accent);display:block;}
+
+.panel{display:none;}
+.panel.show{display:block;}
+
+/* dashboard pós-login */
+.session .who{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.session .avatar{width:40px;height:40px;border-radius:50%;background:var(--panel-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--accent);}
+.session .name{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.95rem;}
+.session .role{font-size:.72rem;color:var(--ink-dim);}
+.kv{display:flex;justify-content:space-between;font-size:.78rem;color:var(--ink-dim);padding:8px 0;border-top:1px solid var(--line);}
+.kv b{color:var(--ink);font-weight:500;}
+
+/* gestão de veículos */
+.wrap.wide{max-width:640px;}
+.section{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);}
+.section h3{font-size:.95rem;margin:0 0 3px;font-family:'Space Grotesk',sans-serif;}
+.section p.sub2{color:var(--ink-dim);font-size:.74rem;margin:0 0 14px;}
+.veh-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.veh-card{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.veh-card .info{display:flex;flex-direction:column;}
+.veh-card .nick{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:.84rem;}
+.veh-card .plate{font-size:.72rem;color:var(--accent);}
+.veh-card .owner{font-size:.68rem;color:var(--ink-dim);}
+.veh-card .acts{display:flex;gap:6px;}
+.icon-btn{background:transparent;border:1px solid var(--line);color:var(--ink-dim);border-radius:6px;padding:5px 8px;font-size:.78rem;cursor:pointer;font-family:inherit;}
+.icon-btn:hover{color:var(--ink);border-color:var(--accent);}
+.icon-btn.danger:hover{color:var(--danger);border-color:var(--danger);}
+.add-row{display:flex;gap:8px;flex-wrap:wrap;}
+.add-row input, .add-row select{flex:1;min-width:120px;margin-bottom:0;}
+.add-row button{flex-shrink:0;width:auto;padding:11px 16px;}
+.empty-small{color:var(--ink-dim);font-size:.76rem;padding:10px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="mark">VT</div><h1>VectorTrack</h1></div>
+
+  <div class="notice"><b>Demo de front-end.</b> Login visual apenas — passwords ficam em texto simples no <code>localStorage</code> deste navegador. Não usar com dados reais.</div>
+
+  <!-- ===== ECRÃ DE SESSÃO (mostrado quando há login ativo) ===== -->
+  <div class="card panel" id="sessionPanel">
+    <div class="session">
+      <div class="who">
+        <div class="avatar" id="avatarLetter">?</div>
+        <div>
+          <div class="name" id="sessName">—</div>
+          <div class="role" id="sessRole">—</div>
+        </div>
+      </div>
+      <div class="kv"><span>Utilizador</span><b id="sessUser">—</b></div>
+      <div class="kv"><span>Sessão iniciada em</span><b id="sessTime">—</b></div>
+      <button class="ghost" id="logoutBtn" style="margin-top:18px;">Terminar sessão</button>
+    </div>
+
+    <!-- ===== CLIENTE: os meus veículos ===== -->
+    <div class="section" id="clientVehSection" style="display:none;">
+      <h3>Os meus veículos</h3>
+      <p class="sub2">Adicione as matrículas ou VIN dos carros que quer gerir.</p>
+      <div class="veh-list" id="clientVehList"></div>
+      <div class="add-row">
+        <input id="cvNick" type="text" placeholder="Apelido (ex: Carro da Ana)">
+        <input id="cvPlate" type="text" placeholder="Matrícula ou VIN" maxlength="17">
+        <button class="primary" id="cvAddBtn" style="width:auto;">Adicionar</button>
+      </div>
+    </div>
+
+    <!-- ===== ADMIN: gestão de todos os veículos ===== -->
+    <div class="section" id="adminVehSection" style="display:none;">
+      <h3>Gestão de veículos — todos os clientes</h3>
+      <p class="sub2">Visão de administrador: adicione ou remova veículos de qualquer cliente.</p>
+      <div class="veh-list" id="adminVehList"></div>
+      <div class="add-row">
+        <select id="avOwner"></select>
+        <input id="avNick" type="text" placeholder="Apelido">
+        <input id="avPlate" type="text" placeholder="Matrícula ou VIN" maxlength="17">
+        <button class="primary" id="avAddBtn" style="width:auto;">Adicionar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ECRÃS DE LOGIN (clientes/admin) ===== -->
+  <div id="authArea">
+    <div class="tabs">
+      <div class="tab active" data-role="cliente">Cliente</div>
+      <div class="tab" data-role="admin">Administrador</div>
+    </div>
+
+    <div class="card">
+      <div class="msg" id="msgBox"></div>
+
+      <!-- login -->
+      <div class="panel show" id="loginPanel">
+        <h2 id="loginTitle">Entrar como cliente</h2>
+        <p class="sub" id="loginSub">Acesso à sua conta VectorTrack.</p>
+        <label>Utilizador ou email</label>
+        <input id="loginUser" type="text" autocomplete="username">
+        <label>Password</label>
+        <input id="loginPass" type="password" autocomplete="current-password">
+        <div class="row"><span></span><button class="link" id="forgotLink">Esqueceu-se da password?</button></div>
+        <button class="primary" id="loginBtn">Entrar</button>
+        <button class="ghost" id="toRegisterBtn">Criar conta de cliente</button>
+      </div>
+
+      <!-- registo (só cliente) -->
+      <div class="panel" id="registerPanel">
+        <h2>Criar conta</h2>
+        <p class="sub">Registo de cliente (demonstração).</p>
+        <label>Nome</label>
+        <input id="regName" type="text">
+        <label>Email</label>
+        <input id="regUser" type="text">
+        <label>Password</label>
+        <input id="regPass" type="password">
+        <button class="primary" id="registerBtn">Registar</button>
+        <button class="ghost" id="toLoginFromRegisterBtn">Voltar ao login</button>
+      </div>
+
+      <!-- recuperar password -->
+      <div class="panel" id="forgotPanel">
+        <h2>Recuperar password</h2>
+        <p class="sub" id="forgotSub">Introduza o seu utilizador/email.</p>
+        <div id="forgotStep1">
+          <label>Utilizador ou email</label>
+          <input id="forgotUser" type="text">
+          <button class="primary" id="sendCodeBtn">Enviar código (simulado)</button>
+        </div>
+        <div id="forgotStep2" style="display:none;">
+          <label>Código recebido (demo: sempre <code>1234</code>)</label>
+          <input id="forgotCode" type="text" maxlength="4">
+          <label>Nova password</label>
+          <input id="forgotNewPass" type="password">
+          <button class="primary" id="resetPassBtn">Repor password</button>
+        </div>
+        <button class="ghost" id="toLoginFromForgotBtn">Voltar ao login</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS_USERS = 'vt_users';
+const LS_SESSION = 'vt_session';
+
+function loadUsers(){
+  try{
+    const raw = localStorage.getItem(LS_USERS);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  // conta demo de cliente pré-criada
+  return { 'cliente@exemplo.pt': { name:'Cliente Demo', pass:'cliente123' } };
+}
+function saveUsers(u){
+  try{ localStorage.setItem(LS_USERS, JSON.stringify(u)); }catch(e){}
+}
+let users = loadUsers();
+
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'admin';
+
+let currentRole = 'cliente';
+let pendingResetFor = null;
+
+function showPanel(id){
+  document.querySelectorAll('#authArea .panel').forEach(p=>p.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+  hideMsg();
+}
+function showMsg(text, type){
+  const box = document.getElementById('msgBox');
+  box.textContent = text;
+  box.className = 'msg ' + type;
+}
+function hideMsg(){
+  const box = document.getElementById('msgBox');
+  box.style.display = 'none';
+  box.className = 'msg';
+}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    currentRole = t.dataset.role;
+    document.getElementById('loginTitle').textContent = currentRole==='admin' ? 'Entrar como administrador' : 'Entrar como cliente';
+    document.getElementById('loginSub').textContent = currentRole==='admin' ? 'Acesso restrito à administração.' : 'Acesso à sua conta VectorTrack.';
+    document.getElementById('toRegisterBtn').style.display = currentRole==='admin' ? 'none' : 'block';
+    showPanel('loginPanel');
+    document.getElementById('loginUser').value='';
+    document.getElementById('loginPass').value='';
+  };
+});
+
+document.getElementById('loginBtn').onclick = ()=>{
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  if(!u || !p){ showMsg('Preencha utilizador e password.','err'); return; }
+
+  if(currentRole==='admin'){
+    if(u===ADMIN_USER && p===ADMIN_PASS){
+      startSession({ name:'Administrador', user:u, role:'admin' });
+    } else {
+      showMsg('Credenciais de administrador inválidas.','err');
+    }
+    return;
+  }
+
+  const acc = users[u.toLowerCase()];
+  if(acc && acc.pass===p){
+    startSession({ name: acc.name || u, user:u, role:'cliente' });
+  } else {
+    showMsg('Utilizador ou password incorretos.','err');
+  }
+};
+
+document.getElementById('toRegisterBtn').onclick = ()=> showPanel('registerPanel');
+document.getElementById('toLoginFromRegisterBtn').onclick = ()=> showPanel('loginPanel');
+document.getElementById('toLoginFromForgotBtn').onclick = ()=> showPanel('loginPanel');
+
+document.getElementById('registerBtn').onclick = ()=>{
+  const name = document.getElementById('regName').value.trim();
+  const user = document.getElementById('regUser').value.trim().toLowerCase();
+  const pass = document.getElementById('regPass').value;
+  if(!name || !user || !pass){ showMsg('Preencha todos os campos.','err'); return; }
+  if(users[user]){ showMsg('Já existe uma conta com este email.','err'); return; }
+  users[user] = { name, pass };
+  saveUsers(users);
+  showMsg('Conta criada. Pode agora entrar.','ok');
+  setTimeout(()=>{ showPanel('loginPanel'); document.getElementById('loginUser').value=user; }, 700);
+};
+
+document.getElementById('forgotLink').onclick = ()=>{
+  document.getElementById('forgotStep1').style.display='block';
+  document.getElementById('forgotStep2').style.display='none';
+  document.getElementById('forgotSub').textContent = currentRole==='admin'
+    ? 'A password de administrador é fixa nesta demo e não pode ser recuperada.'
+    : 'Introduza o seu utilizador/email.';
+  showPanel('forgotPanel');
+};
+
+document.getElementById('sendCodeBtn').onclick = ()=>{
+  const u = document.getElementById('forgotUser').value.trim();
+  if(currentRole==='admin'){
+    showMsg('Contacte o administrador do sistema para repor esta password.','err');
+    return;
+  }
+  if(!u || !users[u.toLowerCase()]){
+    showMsg('Não existe nenhuma conta com esse utilizador/email.','err');
+    return;
+  }
+  pendingResetFor = u.toLowerCase();
+  document.getElementById('forgotStep1').style.display='none';
+  document.getElementById('forgotStep2').style.display='block';
+  showMsg('Código simulado enviado para ' + u + '. (Nenhum email real é enviado nesta demo.)','ok');
+};
+
+document.getElementById('resetPassBtn').onclick = ()=>{
+  const code = document.getElementById('forgotCode').value.trim();
+  const newPass = document.getElementById('forgotNewPass').value;
+  if(code !== '1234'){ showMsg('Código incorreto. (Sugestão: 1234)','err'); return; }
+  if(!newPass){ showMsg('Introduza a nova password.','err'); return; }
+  users[pendingResetFor].pass = newPass;
+  saveUsers(users);
+  showMsg('Password reposta com sucesso. Pode entrar com a nova password.','ok');
+  setTimeout(()=>{ showPanel('loginPanel'); document.getElementById('loginUser').value=pendingResetFor; }, 900);
+};
+
+// ---- gestão de veículos (por cliente, guardado em localStorage) ----
+const LS_VEHICLES = 'vt_vehicles';
+function loadVehicles(){
+  try{
+    const raw = localStorage.getItem(LS_VEHICLES);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {}; // { "email": [ {id, nick, plate} ] }
+}
+function saveVehicles(v){ try{ localStorage.setItem(LS_VEHICLES, JSON.stringify(v)); }catch(e){} }
+let vehicles = loadVehicles();
+
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+function renderClientVehicles(userEmail){
+  const list = document.getElementById('clientVehList');
+  const own = vehicles[userEmail] || [];
+  if(own.length===0){
+    list.innerHTML = '<div class="empty-small">Ainda não adicionou nenhum veículo.</div>';
+    return;
+  }
+  list.innerHTML = own.map(v => `
+    <div class="veh-card">
+      <div class="info">
+        <div class="nick">${escapeHtml(v.nick || 'Sem apelido')}</div>
+        <div class="plate">${escapeHtml(v.plate)}</div>
+      </div>
+      <div class="acts">
+        <button class="icon-btn danger" data-del="${v.id}" data-user="${userEmail}">Remover</button>
+      </div>
+    </div>
+  `).join('');
+  list.querySelectorAll('[data-del]').forEach(b=>{
+    b.onclick = ()=> removeVehicle(b.dataset.user, b.dataset.del, 'cliente');
+  });
+}
+
+function renderAdminVehicles(){
+  const list = document.getElementById('adminVehList');
+  const rows = [];
+  Object.keys(vehicles).forEach(owner=>{
+    (vehicles[owner]||[]).forEach(v=> rows.push({owner, ...v}));
+  });
+  if(rows.length===0){
+    list.innerHTML = '<div class="empty-small">Ainda não existem veículos registados.</div>';
+  } else {
+    list.innerHTML = rows.map(v => `
+      <div class="veh-card">
+        <div class="info">
+          <div class="nick">${escapeHtml(v.nick || 'Sem apelido')}</div>
+          <div class="plate">${escapeHtml(v.plate)}</div>
+          <div class="owner">Cliente: ${escapeHtml(v.owner)}</div>
+        </div>
+        <div class="acts">
+          <button class="icon-btn danger" data-del="${v.id}" data-user="${v.owner}">Remover</button>
+        </div>
+      </div>
+    `).join('');
+    list.querySelectorAll('[data-del]').forEach(b=>{
+      b.onclick = ()=> removeVehicle(b.dataset.user, b.dataset.del, 'admin');
+    });
+  }
+  // dropdown de clientes
+  const sel = document.getElementById('avOwner');
+  const emails = Object.keys(users);
+  sel.innerHTML = emails.map(e=>`<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join('') || '<option value="">(sem clientes)</option>';
+}
+
+function addVehicle(userEmail, nick, plate){
+  if(!plate.trim()){ showMsg('Indique a matrícula ou VIN.','err'); return false; }
+  if(!vehicles[userEmail]) vehicles[userEmail] = [];
+  vehicles[userEmail].push({ id: uid(), nick: nick.trim(), plate: plate.trim().toUpperCase() });
+  saveVehicles(vehicles);
+  return true;
+}
+function removeVehicle(userEmail, id, viewRole){
+  if(vehicles[userEmail]){
+    vehicles[userEmail] = vehicles[userEmail].filter(v=>v.id!==id);
+    saveVehicles(vehicles);
+  }
+  if(viewRole==='admin') renderAdminVehicles(); else renderClientVehicles(userEmail);
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+document.getElementById('cvAddBtn').onclick = ()=>{
+  const session = getSession();
+  if(!session) return;
+  const nick = document.getElementById('cvNick').value;
+  const plate = document.getElementById('cvPlate').value;
+  if(addVehicle(session.user, nick, plate)){
+    document.getElementById('cvNick').value='';
+    document.getElementById('cvPlate').value='';
+    renderClientVehicles(session.user);
+  }
+};
+document.getElementById('avAddBtn').onclick = ()=>{
+  const owner = document.getElementById('avOwner').value;
+  const nick = document.getElementById('avNick').value;
+  const plate = document.getElementById('avPlate').value;
+  if(!owner){ showMsg('Não há nenhum cliente para associar. Crie uma conta de cliente primeiro.','err'); return; }
+  if(addVehicle(owner, nick, plate)){
+    document.getElementById('avNick').value='';
+    document.getElementById('avPlate').value='';
+    renderAdminVehicles();
+  }
+};
+
+function getSession(){
+  try{
+    const raw = localStorage.getItem(LS_SESSION);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+
+function startSession(data){
+  const session = { ...data, time: new Date().toISOString() };
+  try{ localStorage.setItem(LS_SESSION, JSON.stringify(session)); }catch(e){}
+  renderSession(session);
+}
+function endSession(){
+  try{ localStorage.removeItem(LS_SESSION); }catch(e){}
+  document.getElementById('sessionPanel').classList.remove('show');
+  document.getElementById('clientVehSection').style.display='none';
+  document.getElementById('adminVehSection').style.display='none';
+  document.getElementById('authArea').style.display = 'block';
+  document.querySelector('.wrap').classList.remove('wide');
+  showPanel('loginPanel');
+}
+function renderSession(session){
+  document.getElementById('authArea').style.display = 'none';
+  document.getElementById('sessionPanel').classList.add('show');
+  document.getElementById('avatarLetter').textContent = (session.name||'?').charAt(0).toUpperCase();
+  document.getElementById('sessName').textContent = session.name;
+  document.getElementById('sessRole').textContent = session.role==='admin' ? 'Administrador' : 'Cliente';
+  document.getElementById('sessUser').textContent = session.user;
+  document.getElementById('sessTime').textContent = new Date(session.time).toLocaleString('pt-PT');
+
+  if(session.role==='admin'){
+    document.querySelector('.wrap').classList.add('wide');
+    document.getElementById('adminVehSection').style.display='block';
+    document.getElementById('clientVehSection').style.display='none';
+    renderAdminVehicles();
+  } else {
+    document.querySelector('.wrap').classList.add('wide');
+    document.getElementById('clientVehSection').style.display='block';
+    document.getElementById('adminVehSection').style.display='none';
+    renderClientVehicles(session.user);
+  }
+}
+document.getElementById('logoutBtn').onclick = endSession;
+
+// restaurar sessão existente ao carregar
+(function(){
+  try{
+    const raw = localStorage.getItem(LS_SESSION);
+    if(raw) renderSession(JSON.parse(raw));
+  }catch(e){}
+})();
+</script>
+</body>
+</html>
