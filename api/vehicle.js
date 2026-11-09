@@ -1,39 +1,51 @@
+const API_URL = 'https://api.matriculaz.pt/api/vehicles/data/license-plate';
+
 export default async function handler(req, res) {
-  // 1. Permitir apenas pedidos GET (ou adapta conforme o teu frontend)
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Método não permitido' });
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ error: 'Método não permitido.' });
   }
 
-  // Obter os parâmetros da query enviados pelo teu frontend (ex: ?matricula=XX-XX-XX)
-  const { matricula } = req.query;
-
-  if (!matricula) {
-    return res.status(400).json({ error: 'A matrícula é obrigatória.' });
+  const rawIdentifier = req.query.matricula;
+  if (typeof rawIdentifier !== 'string' || !rawIdentifier.trim()) {
+    return res.status(400).json({ error: 'Indique uma matrícula ou VIN.' });
   }
 
-  // Obter o Token das variáveis de ambiente da Vercel (opcional, se a API externa exigir)
-  const API_TOKEN = process.env.MATRICULAZ_TOKEN;
+  const identifier = rawIdentifier.trim().toUpperCase();
+  const token = process.env.MATRICULAZ_TOKEN;
+  if (!token) {
+    return res.status(503).json({
+      error: 'A consulta está indisponível: falta configurar MATRICULAZ_TOKEN na Vercel.',
+    });
+  }
+
+  const isVin = /^[A-Z0-9]{17}$/.test(identifier);
+  const url = isVin ? `${API_URL}/vin` : API_URL;
+  const body = isVin ? { vin: identifier } : { plate: identifier };
 
   try {
-    // 2. Fazer o pedido real para a API externa (ajusta o URL conforme a documentação real da API que usas)
-    const apiResponse = await fetch(`https://matriculaz.pt{matricula}`, {
-      method: 'GET',
+    const apiResponse = await fetch(url, {
+      method: 'POST',
       headers: {
-        'Authorization': `Bearer ${API_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
+        Authorization: `Bearer ${token}`,
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
     });
 
-    if (!apiResponse.ok) {
-      return res.status(apiResponse.status).json({ error: 'Erro ao consultar a API externa' });
+    let data;
+    try {
+      data = await apiResponse.json();
+    } catch {
+      console.error('Matriculaz API returned a non-JSON response.');
+      return res.status(502).json({ error: 'Resposta inválida da API Matriculaz.' });
     }
 
-    const data = await apiResponse.json();
-
-    // 3. Devolver os dados recebidos de volta para o teu frontend
-    return res.status(200).json(data);
-
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(apiResponse.status).json(data);
   } catch (error) {
-    return res.status(500).json({ error: 'Erro interno no servidor proxy', detalhes: error.message });
+    console.error('Matriculaz API request failed:', error);
+    return res.status(502).json({ error: 'Não foi possível contactar a API Matriculaz.' });
   }
 }
