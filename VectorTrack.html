@@ -57,14 +57,7 @@ button.primary{background:var(--accent);color:#06211A;border:none;padding:11px;b
 .add-row{display:flex;gap:8px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px;}
 .add-row input,.add-row select{flex:1;min-width:120px;margin-bottom:0;}
 .add-row button{width:auto;padding:10px 16px;flex-shrink:0;}
-.vehicle-status{min-height:1em;margin:8px 0 0;}
-.vehicle-status[data-kind="error"]{color:var(--danger);}
-.vehicle-status[data-kind="success"]{color:var(--accent);}
 .empty-small{color:var(--ink-dim);font-size:.78rem;padding:16px;text-align:center;background:var(--panel);border:1px dashed var(--line);border-radius:var(--radius);}
-.vehicle-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:12px;}
-.vehicle-detail{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:9px;min-width:0;}
-.vehicle-detail .lab{font-size:.62rem;color:var(--ink-dim);text-transform:uppercase;overflow-wrap:anywhere;}
-.vehicle-detail .val{font-size:.78rem;margin-top:4px;overflow-wrap:anywhere;}
 
 /* ---- locator ---- */
 .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;}
@@ -146,7 +139,7 @@ button.primary{background:var(--accent);color:#06211A;border:none;padding:11px;b
   <!-- ===== DASHBOARD ===== -->
   <div class="view" id="view-dash">
     <h2 id="dashTitle" style="margin-bottom:4px;">Os meus veículos</h2>
-    <p class="sub" id="dashSub">Consulte os dados Matriculaz; o mapa e os comandos são demonstrações.</p>
+    <p class="sub" id="dashSub">Clique em "Localizar" para abrir o painel de localização e comandos.</p>
     <div class="veh-list" id="vehList"></div>
     <div class="add-row">
       <select id="ownerSel" style="display:none;"></select>
@@ -154,17 +147,15 @@ button.primary{background:var(--accent);color:#06211A;border:none;padding:11px;b
       <input id="addPlate" placeholder="Matrícula ou VIN" maxlength="17">
       <button class="primary" id="addVehBtn">Adicionar</button>
     </div>
-    <p class="sub vehicle-status" id="vehicleStatus" role="status" aria-live="polite"></p>
   </div>
 
   <!-- ===== LOCALIZADOR ===== -->
   <div class="view" id="view-locator">
     <button class="ghost" id="backBtn" style="margin-bottom:14px;">← Voltar aos veículos</button>
-    <div class="notice">A consulta Matriculaz apresenta os dados reais disponibilizados pela API. A localização no mapa e os comandos remotos abaixo são apenas demonstrações; não representam a localização nem controlam o veículo.</div>
     <div class="grid">
       <div class="lcard" id="infoCard"></div>
       <div class="lcard">
-        <h3>Demonstração de mapa</h3>
+        <h3>Localização no mapa</h3>
         <div class="radar"><div id="map"></div></div>
         <div class="addr" id="addrText"></div>
       </div>
@@ -309,91 +300,47 @@ function renderVehList(){
     save(LS_VEHICLES,vehicles);renderVehList();
   });
 }
-function setVehicleStatus(message,kind='info'){
-  const status=document.getElementById('vehicleStatus');
-  status.textContent=message;
-  status.dataset.kind=kind;
-}
-async function lookupVehicle(identifier){
-  if(window.location.protocol==='file:'){
-    throw new Error('Está a abrir o HTML como ficheiro local. Aceda a https://vectortrack-six.vercel.app/ depois de publicar as alterações na Vercel.');
-  }
-  let response;
-  try{
-    response=await fetch('/api/vehicle?matricula='+encodeURIComponent(identifier));
-  }catch{
-    throw new Error('Sem ligação à API. Verifique a ligação e se a função /api/vehicle já foi publicada na Vercel.');
-  }
-  let result;
-  try{
-    result=await response.json();
-  }catch{
-    throw new Error('Resposta inválida do servidor de consulta.');
-  }
-  if(!response.ok||result.success===false){
-    throw new Error(result.message||result.error||'Não foi possível consultar o veículo.');
-  }
-  if(!result.data||typeof result.data!=='object'||Array.isArray(result.data)){
-    throw new Error('A API devolveu dados do veículo num formato inesperado.');
-  }
-  return result.data;
-}
-document.getElementById('addVehBtn').onclick=async()=>{
-  const button=document.getElementById('addVehBtn');
-  const nick=document.getElementById('addNick').value.trim();
-  const plate=document.getElementById('addPlate').value.trim().toUpperCase();
-  if(!plate){setVehicleStatus('Indique a matrícula ou VIN.','error');return;}
-  const owner=session.role==='admin'?document.getElementById('ownerSel').value:session.user;
-  if(!owner){setVehicleStatus('Sem cliente associado.','error');return;}
-
-  button.disabled=true;
-  setVehicleStatus('A consultar a Matriculaz…');
-  try{
-    const details=await lookupVehicle(plate);
-    if(!vehicles[owner]) vehicles[owner]=[];
-    const registeredPlate=details.plate||details.vin||plate;
-    vehicles[owner].push({
-      id:Math.random().toString(36).slice(2,9),
-      nick,
-      plate:String(registeredPlate).toUpperCase(),
-      details
-    });
-    save(LS_VEHICLES,vehicles);
-    document.getElementById('addNick').value='';
-    document.getElementById('addPlate').value='';
-    renderVehList();
-    setVehicleStatus('Veículo consultado e adicionado.','success');
-  }catch(error){
-    setVehicleStatus(error.message||'Erro ao consultar o veículo.','error');
-  }finally{
-    button.disabled=false;
-  }
+document.getElementById('addVehBtn').onclick=()=>{
+  const nick=document.getElementById('addNick').value.trim(), plate=document.getElementById('addPlate').value.trim();
+  if(!plate){alert('Indique a matrícula ou VIN.');return;}
+  const owner = session.role==='admin' ? document.getElementById('ownerSel').value : session.user;
+  if(!owner){alert('Sem cliente associado.');return;}
+  if(!vehicles[owner]) vehicles[owner]=[];
+  vehicles[owner].push({id:Math.random().toString(36).slice(2,9),nick,plate:plate.toUpperCase()});
+  save(LS_VEHICLES,vehicles);
+  document.getElementById('addNick').value='';document.getElementById('addPlate').value='';
+  renderVehList();
 };
 document.getElementById('backBtn').onclick=()=>{renderVehList();showView('view-dash');};
 
 /* ===================== localizador (simulado, por matrícula/VIN) ===================== */
 function hashStr(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19;}return()=>{h=Math.imul(h^(h>>>16),2246822507);h=Math.imul(h^(h>>>13),3266489909);h^=h>>>16;return(h>>>0)/4294967296;};}
 function ri(fn,min,max){return Math.floor(fn()*(max-min+1))+min;}
+const MARCAS=[["Volkswagen","Golf"],["Renault","Clio"],["Peugeot","208"],["Toyota","Corolla"],["BMW","Série 3"],["Fiat","500"],["Opel","Corsa"],["Nissan","Qashqai"],["Seat","Leon"],["Kia","Sportage"]];
+const CORES=["cinza grafite","preto","branco","azul-marinho","prata","vermelho"];
+const COMB=["gasolina","diesel","híbrido","elétrico"];
 const RUAS=[["Rua do Souto","Braga",41.5503,-8.4200],["Avenida da Liberdade","Lisboa",38.7139,-9.1394],["Rua de Santa Catarina","Porto",41.1496,-8.6109],["Rua Ferreira Borges","Coimbra",40.2056,-8.4196],["Avenida dos Combatentes","Guimarães",41.4416,-8.2918],["Rua do Carmo","Faro",37.0194,-7.9304]];
 
 function openLocator(owner,id){
   const v=(vehicles[owner]||[]).find(x=>x.id===id);
   if(!v)return;
   const fn=hashStr(v.plate);
+  const marca=MARCAS[ri(fn,0,MARCAS.length-1)];
   const d={
-    nick:v.nick||'Sem apelido', plate:v.plate, details:v.details||{},
+    nick:v.nick||'Sem apelido', plate:v.plate, marca:marca[0], modelo:marca[1],
+    ano:ri(fn,2015,2024), cor:CORES[ri(fn,0,CORES.length-1)], comb:COMB[ri(fn,0,COMB.length-1)],
+    nivel:ri(fn,18,97), odometro:ri(fn,8000,189000), velocidade: ri(fn,0,100)<70?0:ri(fn,5,110),
     rua:RUAS[ri(fn,0,RUAS.length-1)], numPorta:ri(fn,1,240), px:fn(), py:fn()
   };
-  const detailRows=Object.entries(d.details)
-    .filter(([key,value])=>!['plate','vin'].includes(key.toLowerCase())&&value!==null&&value!=='')
-    .map(([key,value])=>{
-      const text=typeof value==='object'?JSON.stringify(value):String(value);
-      return `<div class="vehicle-detail"><div class="lab">${esc(key)}</div><div class="val">${esc(text)}</div></div>`;
-    }).join('');
   document.getElementById('infoCard').innerHTML=`
-    <h3>Dados Matriculaz</h3>
-    <div class="veh-top"><div class="name">${esc(d.nick)}</div><div class="tag">${esc(d.plate)}</div></div>
-    <div class="vehicle-details">${detailRows||'<div class="addr">A API não devolveu outros dados para este veículo.</div>'}</div>`;
+    <h3>Dados do veículo</h3>
+    <div class="veh-top"><div class="name">${esc(d.marca)} ${esc(d.modelo)}</div><div class="tag">${esc(d.plate)}</div></div>
+    <div class="addr" style="margin-top:0;">"${esc(d.nick)}" · ${d.ano} · ${esc(d.cor)} · ${esc(d.comb)} · ${d.odometro.toLocaleString('pt-PT')} km</div>
+    <div class="stats">
+      <div class="stat"><div class="val">${d.velocidade} km/h</div><div class="lab">velocidade</div></div>
+      <div class="stat"><div class="val">${d.nivel}%</div><div class="lab">${d.comb==='elétrico'?'bateria':'combustível'}</div><div class="bar"><i style="width:${d.nivel}%"></i></div></div>
+      <div class="stat"><div class="val">agora</div><div class="lab">última ligação</div></div>
+    </div>`;
   document.getElementById('addrText').textContent='A obter localização…';
   document.getElementById('logBox').innerHTML='';
   addLog('Veículo localizado — sinal estável.');
