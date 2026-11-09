@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Acesso ao Router MEO</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; padding: 40px; text-align: center; }
+        .card { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: inline-block; }
+        input[type="submit"] { background: #ff4500; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 4px; cursor: pointer; }
+        input[type="submit"]:hover { background: #d33700; }
+        .info { color: #666; margin-top: 15px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Router MEO (192.168.1.254)</h2>
+    <p>A enviar credenciais a partir do IP local...</p>
+    
+    <!-- Formulário padrão de autenticação HTTP POST/GET dependendo do modelo -->
+    <form action="http://192.168.1" method="POST">
+        <input type="hidden" name="username" value="meo">
+        <input type="hidden" name="password" value="meo">
+        <input type="submit" value="Entrar no Router">
+    </form>
+
+    <div class="info">
+        <strong>User:</strong> meo | <strong>Pass:</strong> meo
+    </div>
+</div>
+
+</body>
+</html>
